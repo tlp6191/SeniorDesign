@@ -47,7 +47,10 @@
 #include <pcl/io/ply_io.h>
 //#include <pcl/registration/ndt.h>
 
-
+#include <iostream>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/filter.h>
 
@@ -124,7 +127,7 @@ void loadData (int argc, char **argv, std::vector<PCD, Eigen::aligned_allocator<
 {
   std::string extension (".ply");
   // Suppose the first argument is the actual test model
-  for (int i = 1; i < argc-2; i++)
+  for (int i = 1; i < argc-1; i++)
   {
     std::string fname = std::string (argv[i]);
     // Needs to be at least 5: .plot
@@ -168,17 +171,44 @@ int main (int argc, char** argv)
   
     //Eigen::Matrix4f rotate30 = Eigen::Matrix4f::Identity ();//, pairTransform;
 
-    PointCloud::Ptr result (new PointCloud), source, target=data[0].cloud;
+    PointCloud::Ptr result (new PointCloud), source, dest, target=data[1].cloud;
     //argc-2 =angle
-    double ang=atof(argv[argc-2]);
-    ang=ang*3.14159;
-    ang=ang/180;
-	Eigen::Affine3f transform=pcl::getTransformation(24.5,0,11.6,0,ang,0);
+    //double ang=atof(argv[argc-2]);
+    double ang=-30*3.14159/180;
+    Eigen::Affine3f transform=pcl::getTransformation(24.5,0,11.6,0,ang,0);
     Eigen::Matrix4f rotate30 = transform.matrix();
    // pcl::transformPointCloud (*target, *target,rotate30);
-    (*(target))+=(*(data[1].cloud));
-    std::cout<<"Rotating "<<argv[1]<<" "<<argv[3]<<" degrees and merging into "<<argv[2]<<endl;
+    //(*(target))+=(*(data[0].cloud));
+//    std::cout<<"Rotating "<<argv[1]<<" "<<argv[3]<<" degrees and merging into "<<argv[2]<<endl;
+    //pcl::transformPointCloud (*target, *target,rotate30);
+    dest=data[0].cloud;
+    //target=data[2].cloud;
+    /*pcl::transformPointCloud (*target, *target,rotate30);
+    pcl::transformPointCloud (*target, *target,rotate30);
+    (*(dest))+=(*(target));
+    */
+   for(int i=1; i<11; i++){
+	target=data[i].cloud;
+	for(int j=0; j<i; j++){
+    		pcl::transformPointCloud (*target, *target,rotate30);	
+	}
+    	(*(dest))+=(*target);
+    }
+
+    //Stitching complete, now downsampling
+  std::cerr << "PointCloud before filtering: " << dest->width * dest->height 
+       << " data points (" << pcl::getFieldsList (*dest) << ").";	
+    pcl::VoxelGrid<PointT> sor;
+    sor.setInputCloud (dest);
+  sor.setLeafSize (0.5f, 0.5f, 0.5f);
+  sor.filter (*dest);
+	std::cout<<"Filter"<<endl;
+
+  std::cerr << "PointCloud after filtering: " << dest->width * dest->height 
+       << " data points (" << pcl::getFieldsList (*dest) << ").";	
+       
+    
     std::stringstream ss;
     ss << argv[argc-1];
-    pcl::io::savePLYFile (ss.str (), *target, true);
+    pcl::io::savePLYFile (ss.str (), *dest, true);
 }
