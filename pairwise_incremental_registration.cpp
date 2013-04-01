@@ -127,7 +127,7 @@ void loadData (int argc, char **argv, std::vector<PCD, Eigen::aligned_allocator<
 {
   std::string extension (".ply");
   // Suppose the first argument is the actual test model
-  for (int i = 1; i < argc-1; i++)
+  for (int i = 1; i < argc-2; i++)
   {
     std::string fname = std::string (argv[i]);
     // Needs to be at least 5: .plot
@@ -175,7 +175,7 @@ int main (int argc, char** argv)
     //argc-2 =angle
     //double ang=atof(argv[argc-2]);
     double ang=-30*3.14159/180;
-    Eigen::Affine3f transform=pcl::getTransformation(24.5,0,11.6,0,ang,0);
+    Eigen::Affine3f transform=pcl::getTransformation(27,0,14,0,ang,0);
     Eigen::Matrix4f rotate30 = transform.matrix();
    // pcl::transformPointCloud (*target, *target,rotate30);
     //(*(target))+=(*(data[0].cloud));
@@ -187,7 +187,7 @@ int main (int argc, char** argv)
     pcl::transformPointCloud (*target, *target,rotate30);
     (*(dest))+=(*(target));
     */
-   for(int i=1; i<11; i++){
+   for(int i=1; i<12; i++){
 	target=data[i].cloud;
 	for(int j=0; j<i; j++){
     		pcl::transformPointCloud (*target, *target,rotate30);	
@@ -200,9 +200,13 @@ int main (int argc, char** argv)
        << " data points (" << pcl::getFieldsList (*dest) << ").";	
     pcl::VoxelGrid<PointT> sor;
     sor.setInputCloud (dest);
-  sor.setLeafSize (0.5f, 0.5f, 0.5f);
-  sor.filter (*dest);
-	std::cout<<"Filter"<<endl;
+
+    //double ang=atof(argv[argc-2]);
+  sor.setLeafSize (
+atof(argv[argc-2]),
+atof(argv[argc-2]),
+atof(argv[argc-2]));
+  if(atof(argv[argc-2])!=0){sor.filter (*dest);}
 
   std::cerr << "PointCloud after filtering: " << dest->width * dest->height 
        << " data points (" << pcl::getFieldsList (*dest) << ").";	
